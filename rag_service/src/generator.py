@@ -8,11 +8,23 @@ from fastapi import APIRouter
 from src.schemas import RetrievalInput
 from langfuse.langchain import CallbackHandler
 from langfuse import get_client,propagate_attributes
+import uuid
 
 langfuse = get_client()
 
 
 set_verbose(True)
+
+def _extract_text(content) -> str:
+    """Normalize LLM chunk content to plain string.
+    Gemini can return a list of dicts: [{'type': 'text', 'text': '...'}]
+    """
+    if isinstance(content, list):
+        return "".join(
+            part.get("text", "") for part in content if isinstance(part, dict)
+        )
+    return content or ""
+
 
 async def generate(llm_with_tools, message: RetrievalInput):
     """Generate a response to a question using the LLM with tools."""
@@ -21,16 +33,16 @@ async def generate(llm_with_tools, message: RetrievalInput):
     messages = template.format_messages(question=message.user_input)
 
     with langfuse.start_as_current_observation(as_type="span", name="langchain-call"):
-    # Propagate session_id to all observations
-        with propagate_attributes(session_id=message.section_id):
-            # Pass handler to the chain invocation
+        with propagate_attributes(session_id=message.session_id, user_id=message.user_id):
             ai_msg = await llm_with_tools.ainvoke(messages, config={"callbacks": [langfuse_handler]})
 
     # Create an AI message using the LLM with tools
     messages.append(ai_msg)
     
-    # If the AI message contains tool calls, invoke the tools and append their responses
-    if isinstance(ai_msg, AIMessage) and hasattr(ai_msg, "tool_calls"):
+    has_tool_calls = isinstance(ai_msg, AIMessage) and bool(ai_msg.tool_calls)
+
+    if has_tool_calls:
+        # Invoke each tool and collect results
         for tool_call in ai_msg.tool_calls:
             # Parse message to arguments of the function calling
             selected_tool = {"search_docs": search_tool}[tool_call["name"].lower()]
@@ -43,4 +55,12 @@ async def generate(llm_with_tools, message: RetrievalInput):
     # 2. AI message with tool calls (if any) 
     # 3. Tool responses (if any)
     async for chunk in llm_with_tools.astream(messages, config={"callbacks": [langfuse_handler]}):
-        yield chunk.content
+            text = _extract_text(chunk.content)
+            if text:  
+                yield text
+    else:
+        # No tool call needed – ai_msg already has the complete answer.
+        # Yield directly to avoid calling the LLM a second time (which causes duplication).
+        text = _extract_text(ai_msg.content)
+        if text:
+            yield text

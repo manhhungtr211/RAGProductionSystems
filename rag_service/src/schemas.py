@@ -1,6 +1,8 @@
 from pydantic import BaseModel
+from typing import Optional
 
 
 class RetrievalInput(BaseModel):
     user_input: str
-    section_id: str
+    session_id: str
+    user_id: Optional[str] = "anonymous"

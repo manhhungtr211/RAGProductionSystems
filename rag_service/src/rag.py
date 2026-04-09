@@ -24,5 +24,5 @@ class Rag():
 
     async def get_sse_response(self, query):
         async for chunk in generate(self.llm_with_tools, query):
-            yield f"data: {chunk}\n\n"
+            yield f"{chunk} "
         
