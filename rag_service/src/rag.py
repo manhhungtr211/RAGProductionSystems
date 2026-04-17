@@ -1,24 +1,26 @@
-from langchain.chat_models import init_chat_model
+from langchain_ollama import ChatOllama
 from src.settings import SETTINGS
-from langchain_core.tools import Tool
+from langchain_core.tools import StructuredTool
+from pydantic import BaseModel
 from src.retrieval import Retriever
 from src.generator import generate
-# Initialize the LLM with the specified model and settings
-# This code initializes a chat model using the OpenAI API with specific parameters.
-# The model used is "gemini-2.5-flash", with a temperature setting of 0.7 for response variability.
+
+class SearchInput(BaseModel):
+    query: str
+
 class Rag():
     def __init__(self): 
-        self.llm = init_chat_model(
-        "gemini-2.5-flash",
-        api_key=SETTINGS.API_KEY,
-        temperature=0.5,
-        model_provider="google_genai",
+        self.llm = ChatOllama(
+            model="llama3.2",
+            base_url="http://localhost:11434",
+            temperature=0.5,
         )
         self.retrieve = Retriever()
-        self.search_tool = Tool(
+        self.search_tool = StructuredTool.from_function(
             name="search_docs",
             description="Search for documents relevant to a query",
             func=self.retrieve.retrieve,
+            args_schema=SearchInput,
         )
         self.llm_with_tools = self.llm.bind_tools([self.search_tool])
 

@@ -17,7 +17,10 @@ class Retriever:
             "src/faiss_index", self.embeddings, allow_dangerous_deserialization=True
         )
     @observe(name="Retrieval Step")
-    def retrieve(self, question: str, k: int = 2):
+    def retrieve(self, question, k: int = 2):
+        # Tool.ainvoke() có thể truyền args là dict {"query": "..."} thay vì string
+        if isinstance(question, dict):
+            question = question.get("query") or question.get("question") or str(question)
         """Truy xuất tài liệu và đẩy metadata chi tiết lên Langfuse."""
         # Thực hiện tìm kiếm
         docs = self.vector_store.similarity_search(question, k)
