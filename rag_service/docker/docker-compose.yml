@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  localstack:
+    container_name: "${LOCALSTACK_DOCKER_NAME:-localstack-main}"
+    # Dùng bản 3.4 để cực kỳ ổn định, không dùng bản dev bị lỗi license
+    image: localstack/localstack:3.4
+    ports:
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:4510-4559:4510-4559"
+    environment:
+      - SERVICES=s3
+      - DEBUG=${DEBUG:-0}
+      - PERSISTENCE=${PERSISTENCE:-1}
+      # THÊM DÒNG NÀY: Để ép chạy bản Community, không kích hoạt Pro
+      - ACTIVATE_PRO=0
+      - DATA_DIR=/var/lib/localstack/data
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    restart: unless-stopped
