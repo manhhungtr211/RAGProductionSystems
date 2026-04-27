@@ -4,9 +4,15 @@ from langchain_core.tools import StructuredTool
 from pydantic import BaseModel
 from src.retrieval import Retriever
 from src.generator import generate
+from src.cache import SemanticCache
+from langfuse import observe, propagate_attributes, get_client
+from src.schemas import RetrievalInput
+
+langfuse = get_client()
 
 class SearchInput(BaseModel):
     query: str
+
 
 class Rag():
     def __init__(self): 
@@ -24,7 +30,28 @@ class Rag():
         )
         self.llm_with_tools = self.llm.bind_tools([self.search_tool])
 
-    async def get_sse_response(self, query):
+        # Response cache – cache câu trả lời cuối cùng của LLM
+        self.response_cache = SemanticCache(
+            embeddings=self.retrieve.embeddings,
+            key_prefix="rag:response:",
+        )
+
+    async def get_sse_response(self, query:RetrievalInput):
+        # ── Tầng 1: Response cache ─────────────────────────────────────
+        # Nếu HIT → trả về ngay, không retrieve, không generate
+        cached_answer = self.response_cache.get(query.user_input)
+        if cached_answer is not None:
+            yield cached_answer
+            return
+        # ──────────────────────────────────────────────────────────────
+        # ── Redis Semantic Cache ──────────────────────────────────────
+        # ─────────────────────────────────────────────────────────────
+        # MISS → generate bình thường, đồng thời thu thập full response
+        full_response = ""
         async for chunk in generate(self.llm_with_tools, query):
+            full_response += chunk
             yield f"{chunk} "
-        
+
+        # Lưu full response vào cache cho lần sau
+        if full_response:
+            self.response_cache.set(query.user_input, full_response)

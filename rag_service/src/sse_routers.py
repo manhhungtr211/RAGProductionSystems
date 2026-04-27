@@ -11,8 +11,11 @@ async def retrieval_response(
     input: RetrievalInput, 
     rag_service: Rag = Depends(get_rag_service)
     ) :
-    session_id = str(uuid.uuid4())
-    input.session_id = session_id
+    input = RetrievalInput(
+        user_input=input.user_input,
+        session_id=str(uuid.uuid4()),
+        user_id="anonymous"
+    )
     return StreamingResponse(
         rag_service.get_sse_response(query=input),
         media_type="text/event-stream"

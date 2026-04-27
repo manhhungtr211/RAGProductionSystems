@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from src.sse_retrieval import sse_router
+from src.sse_routers import sse_router
 router = APIRouter()
 
 router.include_router(
