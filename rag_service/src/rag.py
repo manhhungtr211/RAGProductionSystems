@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from src.retrieval import Retriever
 from src.generator import generate
 from src.cache import SemanticCache
-from langfuse import observe, propagate_attributes, get_client
+from langfuse import get_client
 from src.schemas import RetrievalInput
 
 langfuse = get_client()
@@ -36,22 +36,28 @@ class Rag():
             key_prefix="rag:response:",
         )
 
-    async def get_sse_response(self, query:RetrievalInput):
+    async def get_sse_response(self, query: RetrievalInput):
         # ── Tầng 1: Response cache ─────────────────────────────────────
-        # Nếu HIT → trả về ngay, không retrieve, không generate
         cached_answer = self.response_cache.get(query.user_input)
         if cached_answer is not None:
             yield cached_answer
             return
-        # ──────────────────────────────────────────────────────────────
-        # ── Redis Semantic Cache ──────────────────────────────────────
         # ─────────────────────────────────────────────────────────────
-        # MISS → generate bình thường, đồng thời thu thập full response
+        # MISS → tạo trace thủ công (không dùng @observe vì async generator
+        # không tương thích — context bị drop sau mỗi yield)
+        trace = langfuse.start_trace(
+            name="RAG Pipeline",
+            session_id=query.session_id,
+            user_id=query.user_id,
+            input={"question": query.user_input},
+        )
+
         full_response = ""
         async for chunk in generate(self.llm_with_tools, query):
             full_response += chunk
             yield f"{chunk} "
 
-        # Lưu full response vào cache cho lần sau
+        # Log final answer sau khi stream kết thúc
         if full_response:
+            trace.update(output={"answer": full_response})
             self.response_cache.set(query.user_input, full_response)

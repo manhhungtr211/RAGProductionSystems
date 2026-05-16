@@ -6,7 +6,7 @@ r = redis.Redis(
         port=6379,
         decode_responses=True  # trả về string thay vì bytes
     )
-
+r.flushall()
 
 for key in r.scan_iter("rag:*"):
     response_text = r.hgetall(key)

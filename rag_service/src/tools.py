@@ -1,13 +1,16 @@
-from langchain_core.tools import Tool
-from src.retrieval import Retriever
+from langchain_core.tools import StructuredTool
+from pydantic import BaseModel
 
 
-# Define function calling the retrieval function
-# This function is used to search for documents relevant to a query.
-retrieve = Retriever()
+class SearchInput(BaseModel):
+    query: str
 
-search_tool = Tool(
-    name="search_docs",
-    description="Search for documents relevant to a query",
-    func=retrieve.retrieve,
-)
+
+def make_search_tool(retriever):
+    """Tạo search tool từ Retriever instance được truyền vào (tránh double init)."""
+    return StructuredTool.from_function(
+        name="search_docs",
+        description="Search for documents relevant to a query",
+        func=retriever.retrieve,
+        args_schema=SearchInput,
+    )

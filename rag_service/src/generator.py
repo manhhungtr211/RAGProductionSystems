@@ -26,6 +26,9 @@ def _extract_text(content) -> str:
 #check vì sao Gen lại > langchain-call (có phải do TTFT)
 async def generate(llm_with_tools, input: RetrievalInput):
     """Generate a response to a question using the LLM with tools."""
+    # Log user question vào trace gốc → evaluator map biến {{input}}
+    #langfuse.update_current_generation(input={"question": input.user_input})
+
     # Format the messages using the template and the question
     langfuse_handler = CallbackHandler()
     messages = template.format_messages(question=input.user_input)
@@ -35,28 +38,28 @@ async def generate(llm_with_tools, input: RetrievalInput):
         with propagate_attributes(session_id=input.session_id, user_id=input.user_id):
             ai_msg = await llm_with_tools.ainvoke(messages, config={"callbacks": [langfuse_handler]})
 
-    # Create an AI message using the LLM with tools
-    messages.append(ai_msg)
-    
-    has_tool_calls = isinstance(ai_msg, AIMessage) and bool(ai_msg.tool_calls)
+            # Create an AI message using the LLM with tools
+            messages.append(ai_msg)
+            
+            has_tool_calls = isinstance(ai_msg, AIMessage) and bool(ai_msg.tool_calls)
 
-    if has_tool_calls:
-        # Invoke each tool and collect results
-        for tool_call in ai_msg.tool_calls:
-            # Parse message to arguments of the function calling
-            selected_tool = {"search_docs": search_tool}.get(tool_call["name"].lower())
-            if selected_tool is None:
-                continue
-            tool_msg = await selected_tool.ainvoke(tool_call, config={"callbacks": [langfuse_handler]})
-            messages.append(tool_msg)
-            print(messages)
-    
-    # Finally, get response by invoking the LLM with the all messages
-    # Currently, list of messages includes:
-    # 1. User question
-    # 2. AI message with tool calls (if any)
-    # 3. Tool responses (if any)
-    async for chunk in llm_with_tools.astream(messages, config={"callbacks": [langfuse_handler]}):
-        text = _extract_text(chunk.content)
-        if text:
-            yield text
+            if has_tool_calls:
+                # Invoke each tool and collect results
+                for tool_call in ai_msg.tool_calls:
+                    # Parse message to arguments of the function calling
+                    selected_tool = {"search_docs": search_tool}.get(tool_call["name"].lower())
+                    if selected_tool is None:
+                        continue
+                    tool_msg = await selected_tool.ainvoke(tool_call, config={"callbacks": [langfuse_handler]})
+                    messages.append(tool_msg)
+                    print(messages)
+            
+            # Finally, get response by invoking the LLM with the all messages
+            # Currently, list of messages includes:
+            # 1. User question
+            # 2. AI message with tool calls (if any)
+            # 3. Tool responses (if any)
+            async for chunk in llm_with_tools.astream(messages, config={"callbacks": [langfuse_handler]}):
+                text = _extract_text(chunk.content)
+                if text:
+                    yield text

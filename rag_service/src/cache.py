@@ -22,7 +22,7 @@ class SemanticCache:
     """
 
     KEY_PREFIX = "rag:retrieval:"
-    DEFAULT_TTL = 60 * 60 * 24 * 180  # 180 ngày
+    DEFAULT_TTL = 60 * 60 * 24  # 180 ngày
 
     def __init__(
         self,

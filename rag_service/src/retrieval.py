@@ -9,6 +9,8 @@ from src.settings import SETTINGS
 
 langfuse = get_client()
 
+EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+
 
 class Retriever:
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
@@ -25,31 +27,34 @@ class Retriever:
 
     @observe(name="Retrieval Step")
     def retrieve(self, question, k: int = 2):
+        """Truy xuất tài liệu và đẩy context chi tiết lên Langfuse để LLM-as-a-judge đánh giá."""
         # Tool.ainvoke() có thể truyền args là dict {"query": "..."} thay vì string
         if isinstance(question, dict):
             question = question.get("query") or question.get("question") or str(question)
-        """Truy xuất tài liệu và đẩy metadata chi tiết lên Langfuse."""
-
 
         # Thực hiện tìm kiếm FAISS
         docs = self.vector_store.similarity_search(question, k)
         for doc in docs:
             print(doc.page_content)
-        retrieved_content = [
+
+        # Chuẩn bị retrieved context dưới dạng có cấu trúc
+        retrieved_passages = [
             {"content": doc.page_content, "metadata": doc.metadata}
             for doc in docs
         ]
-        result = json.dumps([d["content"] for d in retrieved_content])
+        context_texts = [d["content"] for d in retrieved_passages]
 
-        # NÂNG CẤP V4: Cập nhật thông tin chi tiết vào Span hiện tại
-        with propagate_attributes(
-            trace_name="trace-name",
-            metadata={"k_value": k, "model": "all-MiniLM-L6-v2"},
-        ):
-            return result
-"""
-        langfuse.set_current_trace_io(
+        # @observe tạo span → dùng update_current_span
+        # input/output → evaluator LLM-as-a-judge map biến {{input}}, {{output}}
+        langfuse.update_current_span(
             input={"query": question},
-            output={"result": retrieved_content, "cache_hit": False},
+            output={"context": context_texts},
+            metadata={
+                "k_value": k,
+                "embedding_model": EMBEDDING_MODEL,
+                "num_docs_retrieved": len(docs),
+                "context": context_texts,
+            },
         )
-"""
+        # Trả về JSON string cho LangChain tool (giữ nguyên format cũ)
+        return json.dumps(context_texts)
