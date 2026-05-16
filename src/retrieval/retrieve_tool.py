@@ -1,22 +1,21 @@
 import json
 import logging
-
 import faiss
 from langchain_community.vectorstores import FAISS
-from langfuse import observe, propagate_attributes, get_client
-
+from langfuse import observe, get_client
 from src.embedding.base_embedder import get_embeddings
 from src.embedding.embedding_cache import SemanticCache
 from config.settings import SETTINGS
 
 logger = logging.getLogger(__name__)
+# langfuse client is removed here as it is not needed for @observe usage
 langfuse = get_client()
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 FAISS_INDEX_PATH = "data/vectordb/faiss_index"
 
 
-class Retriever:
+class Retrieve_Tool:
     def __init__(self, model_name: str = EMBEDDING_MODEL):
         self.embeddings = get_embeddings(model_name)
         self.vector_store = FAISS.load_local(
@@ -49,8 +48,6 @@ class Retriever:
         # @observe creates a span → use update_current_span
         # input/output → LLM-as-a-judge evaluator maps {{input}}, {{output}} variables
         langfuse.update_current_span(
-            input={"query": question},
-            output={"context": context_texts},
             metadata={
                 "k_value": k,
                 "embedding_model": EMBEDDING_MODEL,

@@ -23,6 +23,6 @@ docker/volume/cache/*.crt
 
 # Bỏ qua file nháp cá nhân
 bug.text
-redis-test.py
+src/redis-test.py
 CLAUDE.md
 
