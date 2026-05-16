@@ -1,0 +1,19 @@
+retriever:
+  embedding_model: "all-MiniLM-L6-v2"  # HuggingFace model name
+  faiss_index_path: "data/vectordb/faiss_index"
+  top_k: 2                              # Number of documents to retrieve
+
+  # Hybrid retrieval settings
+  hybrid:
+    enabled: false
+    dense_weight: 0.7
+    sparse_weight: 0.3
+
+  # Semantic cache settings
+  cache:
+    threshold: 0.70                     # Cosine similarity threshold for cache hit
+
+chunking:
+  chunk_size: 1000
+  chunk_overlap: 100
+  splitter: "recursive"                 # Options: "recursive", "character", "token"

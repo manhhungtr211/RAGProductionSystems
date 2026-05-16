@@ -1,0 +1,11 @@
+llm:
+  provider: "ollama"          # Options: "ollama", "openai", "gemini"
+  model: "llama3.2"
+  base_url: "http://localhost:11434"
+  temperature: 0.5
+  max_tokens: 1024
+
+# Example OpenAI config:
+# provider: "openai"
+# model: "gpt-4o"
+# temperature: 0.3

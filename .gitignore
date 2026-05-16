@@ -1,0 +1,28 @@
+# Vector Database
+data/vectordb/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+*.egg-info/
+
+# Environments
+.env
+
+# MacOS
+.DS_Store
+
+# Bỏ qua các file key và chứng chỉ bảo mật
+docker/volume/cache/*.key
+docker/volume/cache/*.pem
+docker/volume/cache/*.crt
+
+# Bỏ qua file nháp cá nhân
+bug.text
+redis-test.py
+
+
