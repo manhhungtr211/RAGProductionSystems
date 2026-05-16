@@ -4,8 +4,9 @@ import faiss
 from langchain_community.vectorstores import FAISS
 from langfuse import observe, get_client
 from src.embedding.base_embedder import get_embeddings
-from src.embedding.embedding_cache import SemanticCache
+from src.embedding.cache import SemanticCache
 from config.settings import SETTINGS
+from langfuse.langchain import CallbackHandler
 
 logger = logging.getLogger(__name__)
 # langfuse client is removed here as it is not needed for @observe usage
@@ -27,14 +28,15 @@ class Retrieve_Tool:
         )
 
     @observe(name="Retrieval Step")
-    def retrieve(self, question, k: int = 2):
+    def retrieve(self, query, k: int = 2):
         """Retrieve documents and push detailed context to Langfuse for LLM-as-a-judge evaluation."""
         # Tool.ainvoke() may pass args as dict {"query": "..."} instead of string
-        if isinstance(question, dict):
-            question = question.get("query") or question.get("question") or str(question)
+        #handler = CallbackHandler()
+        if isinstance(query, dict):
+            query = query.get("query") or query.get("question") or str(query)
 
         # FAISS similarity search
-        docs = self.vector_store.similarity_search(question, k)
+        docs = self.vector_store.similarity_search(query, k)
         for doc in docs:
             print(doc.page_content)
 
@@ -47,7 +49,7 @@ class Retrieve_Tool:
 
         # @observe creates a span → use update_current_span
         # input/output → LLM-as-a-judge evaluator maps {{input}}, {{output}} variables
-        langfuse.update_current_span(
+        langfuse.update_current_generation(
             metadata={
                 "k_value": k,
                 "embedding_model": EMBEDDING_MODEL,

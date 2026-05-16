@@ -48,11 +48,8 @@ async def generate(llm_with_tools, input: RetrievalInput, search_tool, callbacks
             selected_tool = {"search_docs": search_tool}.get(tool_call["name"].lower())
             if selected_tool is None:
                 continue
-            print(f"Selected tool: {selected_tool}")
             tool_msg = await selected_tool.ainvoke(tool_call, config={"callbacks": combined_callbacks})
-            print(f"Tool message: {tool_msg}")
             messages.append(tool_msg)
-            print(f"Messages: {messages}")
     
     # Finally, get response by invoking the LLM with the all messages
     async for chunk in llm_with_tools.astream(messages, config={"callbacks": combined_callbacks}):

@@ -2,7 +2,7 @@ from langchain_ollama import ChatOllama
 from config.settings import SETTINGS
 from src.retrieval.retrieve_tool import Retrieve_Tool
 from src.generation.llm_client import generate
-from src.embedding.embedding_cache import SemanticCache
+from src.embedding.cache import SemanticCache
 from src.api.schemas import RetrievalInput
 from src.generation.tools import search_tool
 from langfuse import observe, propagate_attributes, get_client
@@ -31,6 +31,9 @@ class Rag():
             user_id=query.user_id
         ):        
             result = self.response_cache.get(query.user_input)
+        if result is not None:
+            yield result
+            return
  
         full_response = ""
         async for chunk in generate(self.llm_with_tools, query, self.search_tool):
@@ -39,4 +42,4 @@ class Rag():
 
         if full_response:
             self.response_cache.set(query.user_input, full_response)
-            langfuse.set_current_trace_io(input={"query": query.user_input}, output={"result": full_response})
+            langfuse.set_current_trace_io(input={query.user_input}, output={full_response})
