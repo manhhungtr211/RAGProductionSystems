@@ -82,7 +82,7 @@ class SemanticCache:
                     best_response = self._client.hget(key, "result")
                     best_query = self._client.hget(key, "query")
             print(f"best query: {best_query}")
-            print(f"threshold: {self.threshold}")
+            print(f"best score: {best_score}")
             if best_score >= self.threshold:
                 logger.info(f"Cache HIT (score={best_score}, threshold={self.threshold})")
                 return best_response
