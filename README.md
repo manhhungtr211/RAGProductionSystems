@@ -1,4 +1,4 @@
-# Welcome to demo about the lesson 2 - Basic RAG pipeline
+# Welcome to demo about 
 
 ## Setup
 
