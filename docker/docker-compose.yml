@@ -1,21 +1,43 @@
-version: "3.8"
+version: "3.9"
 
 services:
-  localstack:
-    container_name: "${LOCALSTACK_DOCKER_NAME:-localstack-main}"
-    # Dùng bản 3.4 để cực kỳ ổn định, không dùng bản dev bị lỗi license
-    image: localstack/localstack:3.4
+  # ── Redis: Semantic Cache ──────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: rag_redis
     ports:
-      - "127.0.0.1:4566:4566"
-      - "127.0.0.1:4510-4559:4510-4559"
-    environment:
-      - SERVICES=s3
-      - DEBUG=${DEBUG:-0}
-      - PERSISTENCE=${PERSISTENCE:-1}
-      # THÊM DÒNG NÀY: Để ép chạy bản Community, không kích hoạt Pro
-      - ACTIVATE_PRO=0
-      - DATA_DIR=/var/lib/localstack/data
+      - "6379:6379"
     volumes:
-      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
-      - "/var/run/docker.sock:/var/run/docker.sock"
+      - redis_data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── RAG App: FastAPI + Streamlit ──────────────────────────
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: rag_app
+    ports:
+      - "8000:8000"   # FastAPI API
+      - "7860:7860"   # Streamlit UI (HuggingFace port)
+    env_file:
+      - ../.env
+    environment:
+      # Ghi đè Redis host sang service name trong Docker network
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      # Mount data folder để không mất FAISS index khi restart
+      - ../data:/app/data
+
+volumes:
+  redis_data:

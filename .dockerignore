@@ -1,0 +1,34 @@
+# Virtual environment
+.venv/
+
+# Git
+.git/
+.gitignore
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Docker (avoid recursive copy)
+docker/volume/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Gradio cache
+.gradio/
+
+# Misc
+*.md
+!README.md
+.env
+.env_sample
+bug.text
+test_langfuse.py
+demo_gra.py
+CLAUDE.md
