@@ -14,7 +14,7 @@ try:
                     "To fetch relevant documents, you will use the `search_docs` tool. "
                     "Respond in a concise, neutral tone for a general audience. "
                     "Use a maximum of 3 short sentences."
-                    "If the answer isn't in the context, say you don't know."
+                    "If the answer isn't in the context from result of tools, say you don't know."
                 )
             },
             {"role": "user", "content": "{{question}}"}
