@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # ── Redis: Semantic Cache ──────────────────────────────────
   redis:
@@ -11,33 +9,35 @@ services:
       - redis_data:/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 5
 
   # ── RAG App: FastAPI + Streamlit ──────────────────────────
   app:
-    build:
-      context: ..
-      dockerfile: Dockerfile
+    build: . # Build the image from the Dockerfile in this directory
     container_name: rag_app
     ports:
-      - "8000:8000"   # FastAPI API
-      - "7860:7860"   # Streamlit UI (HuggingFace port)
+      - "8000:8000" # FastAPI API
+      - "7860:7860" # Streamlit UI (HuggingFace port)
     env_file:
-      - ../.env
-    environment:
-      # Ghi đè Redis host sang service name trong Docker network
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - ./.env
     depends_on:
       redis:
         condition: service_healthy
     restart: unless-stopped
     volumes:
       # Mount data folder để không mất FAISS index khi restart
-      - ../data:/app/data
-
+      - ./data:/app/data
+  ollama:
+    image: ollama/ollama:latest
+    container_name: rag_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama # persist downloaded models
+    restart: unless-stopped
 volumes:
   redis_data:
+  ollama_data:

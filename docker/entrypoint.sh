@@ -5,14 +5,14 @@
 set -e
 
 echo "🚀 Starting FastAPI backend on port 8000..."
-uvicorn src.main:app --host 0.0.0.0 --port 8000 &
+uvicorn src.app.back-end:app --host 0.0.0.0 --port 8000 &
 FASTAPI_PID=$!
 
 echo "⏳ Waiting for FastAPI to be ready..."
 sleep 4
 
 echo "🎨 Starting Streamlit frontend on port 7860..."
-streamlit run src/streamlit.py \
+streamlit run src/app/front-end.py \
     --server.port 7860 \
     --server.address 0.0.0.0 \
     --server.headless true \

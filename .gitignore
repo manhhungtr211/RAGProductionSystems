@@ -13,9 +13,6 @@ venv/
 # Environments
 .env
 
-# MacOS
-.DS_Store
-
 # Bỏ qua các file key và chứng chỉ bảo mật
 docker/volume/cache/*.key
 docker/volume/cache/*.pem
