@@ -1,20 +1,39 @@
 from langchain_ollama import ChatOllama
+# pyrefly: ignore [missing-import]
 from config.settings import SETTINGS
 from src.retrieval.retrieve_tool import Retrieve_Tool
 from src.generation.llm_client import generate
 from src.embedding.cache import SemanticCache
 from src.api.schemas import RetrievalInput
+from langchain_groq import ChatGroq
+import httpx
 from src.generation.tools import search_tool
 from langfuse import observe, propagate_attributes, get_client
 
 langfuse = get_client()
+def is_ollama_available(base_url="http://localhost:11434"):
+    try:
+        response = httpx.get(f"{base_url}/api/tags", timeout=2.0)
+        print("Ollama is available")
+        return response.status_code == 200
+    except Exception:
+        print("Ollama is not available")
+        return False
+
 class Rag():
-    def __init__(self): 
-        self.llm = ChatOllama(
-            model="llama3.2",
-            base_url="http://localhost:11434",
-            temperature=0.5,
-        )
+    def __init__(self):
+        if is_ollama_available():
+            self.llm = ChatOllama(
+                model="llama3.2",
+                base_url="http://localhost:11434",
+                temperature=0.5,
+            )
+        else:
+            self.llm = ChatGroq(
+                model="llama-3.1-8b-instant",
+                api_key=SETTINGS.API_KEY.get_secret_value(),
+                temperature=0.5,
+            ) 
         self.retrieve = Retrieve_Tool()
         self.search_tool = search_tool(self.retrieve)
         self.llm_with_tools = self.llm.bind_tools([self.search_tool])

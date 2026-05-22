@@ -14,8 +14,8 @@ import time
 import signal
 import os
 
-FASTAPI_CMD   = [sys.executable, "-m", "uvicorn", "src.app.backend:app", "--host", "0.0.0.0", "--port", "8000"]
-STREAMLIT_CMD = [sys.executable, "-m", "streamlit", "run", "src/app/frontend.py", "--server.port", "7860"]
+FASTAPI_CMD   = [sys.executable, "-m", "uvicorn", "src.app.back-end:app", "--host", "0.0.0.0", "--port", "8000"]
+STREAMLIT_CMD = [sys.executable, "-m", "streamlit", "run", "src/app/front-end.py", "--server.port", "7860"]
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 

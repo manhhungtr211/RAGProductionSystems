@@ -33,12 +33,20 @@ class SemanticCache:
         self.embeddings = embeddings
         self.threshold = threshold
         self.KEY_PREFIX = key_prefix
-        self._client = redis.Redis(
-            host=SETTINGS.REDIS_HOST,
-            port=SETTINGS.REDIS_PORT,
-            password=SETTINGS.REDIS_PASSWORD.get_secret_value() if SETTINGS.REDIS_PASSWORD else None,
-            decode_responses=True,
-        )
+
+        # Ưu tiên REDIS_URL (cloud API) nếu có, fallback sang host:port (local Docker)
+        if SETTINGS.REDIS_URL:
+            self._client = redis.from_url(
+                SETTINGS.REDIS_URL,
+                decode_responses=True,
+            )
+        else:
+            self._client = redis.Redis(
+                host=SETTINGS.REDIS_HOST,
+                port=SETTINGS.REDIS_PORT,
+                password=SETTINGS.REDIS_PASSWORD.get_secret_value() if SETTINGS.REDIS_PASSWORD else None,
+                decode_responses=True,
+            )
         self._ping()
 
     # ------------------------------------------------------------------

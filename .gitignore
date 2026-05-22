@@ -1,6 +1,3 @@
-# Vector Database
-data/vectordb/
-
 # Python
 __pycache__/
 *.py[cod]
@@ -23,3 +20,12 @@ bug.text
 src/redis-test.py
 CLAUDE.md
 
+# --- PHẦN ĐÃ SỬA ĐỂ CHO PHÉP ĐẨY FAISS ---
+
+# Chỉ bỏ qua file raw PDF và file nén, KHÔNG bỏ qua thư mục vector
+data/raw/
+*.zip
+*.pdf
+
+# Bỏ qua bộ nhớ đệm của Docker nhưng KHÔNG cấm file .faiss/.pickle
+docker/volume/cache/

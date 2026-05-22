@@ -18,11 +18,13 @@ class Settings(BaseSettings):
     LANGFUSE_BASE_URL: str
 
     # Redis cache
+
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_PASSWORD: Optional[SecretStr] = None
-    REDIS_CACHE_THRESHOLD: float = 0.70  # cosine similarity threshold
-
+    REDIS_CACHE_THRESHOLD: float = 0.80  # cosine similarity threshold
+    REDIS_URL: str | None = None
+    
     class Config:
         """Pydantic config."""
 
