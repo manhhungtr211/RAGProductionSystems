@@ -3,7 +3,7 @@
 A **production-ready Retrieval-Augmented Generation (RAG) pipeline** that allows users to ask questions over internal documents (PDF) with real-time streaming responses. The system features agentic tool calling, semantic caching, full observability, and multi-provider LLM fallback.
 
 ## Getting Started
-
+[**Link demo:**](https://huggingface.co/spaces/manhhung211/Rag_Production)
 ### Prerequisites
 
 - **Python** ≥ 3.10
